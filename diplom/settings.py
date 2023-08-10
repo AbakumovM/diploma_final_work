@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "backend",
+    "backend.apps.BackendConfig",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -114,12 +115,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = "backend.CustomUser"
 
+
+RECIPIENTS_EMAIL = ["abakumovms@gmail.com"]
+DEFAULT_FROM_EMAIL = "abakumovms7@yandex.ru"
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Moscow"
 
 USE_I18N = True
 
@@ -135,3 +141,9 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
