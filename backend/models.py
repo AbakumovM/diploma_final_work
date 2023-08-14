@@ -9,8 +9,8 @@ USER_TYPE_CHOICES = (("buyer", "Покупатель"), ("saler", "Продав�
 
 
 class CustomAccountManager(BaseUserManager):
-
     use_in_migrations = True
+
     def _create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError("Поле email не может быть пустым! ")
@@ -26,7 +26,6 @@ class CustomAccountManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -53,12 +52,14 @@ class CustomUser(AbstractUser):
     position = models.CharField(max_length=40, blank=True, verbose_name="Должность")
     username_validator = UnicodeUsernameValidator()
     username = models.CharField(
-        _('username'),
+        _("username"),
         max_length=150,
-        help_text=_('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+        help_text=_(
+            "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+        ),
         validators=[username_validator],
         error_messages={
-            'unique': _("A user with that username already exists."),
+            "unique": _("A user with that username already exists."),
         },
     )
 
