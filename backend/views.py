@@ -1,3 +1,4 @@
+from distutils.util import strtobool
 from rest_framework.generics import ListAPIView
 from urllib.parse import urlparse
 from django.http import JsonResponse
@@ -20,7 +21,7 @@ from backend.models import (
     Shop,
     ProductInfo,
 )
-from backend.serializers import ShopSerializer, UserSerializer
+from backend.serializers import CategorySerializer, ProductSerializer, ShopSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -51,10 +52,7 @@ class RegisterAccount(APIView):
 
 
 class AutUser(APIView):
-    def get(self, request, *args, **kwargs):
-        users = CustomUser.objects.all().values()
 
-        return JsonResponse({"users": list(users)})
 
     def post(self, request, *args, **kwargs):
         if {"email", "password"}.issubset(request.data):
@@ -136,3 +134,73 @@ class ShopsView(ListAPIView):
    queryset = Shop.objects.all()
    serializer_class = ShopSerializer
 
+
+
+class ProductView(ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+
+class UserDetails(APIView):
+    permission_classes = (IsAuthenticated,)
+
+
+    def get(self, request, *args, **kwargs):
+
+        data = UserSerializer(request.user)
+        return JsonResponse({"USER": data.data})
+    
+
+    def post(self, request, *args, **kwargs):
+        
+        if {'password'}.issubset(request.data):
+            try:
+                validate_password(request.data["password"])
+            except Exception as pass_error:
+                return JsonResponse({"Status": False, "Errors": {"password": [error for error in pass_error]}}) 
+            else:
+                request.user.set_password(request.data['password'])
+
+
+        user_serializer =  UserSerializer(request.user, data=request.data, partial=True)
+        if user_serializer.is_valid():
+            user_serializer.save()
+            return JsonResponse({'status': True, 'massege': 'success'})
+        else:
+            return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
+
+
+class CategoryView(ListAPIView):
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+class PartnerState(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        
+        
+        if request.user.type != "saler":
+            return JsonResponse({"Status": False, "Errors": "you not seler"}, status=403)
+        
+        state = request.user.shop
+        serializer_shop = ShopSerializer(state)
+
+        return JsonResponse({"status": True, "shop": serializer_shop.data['state']})
+
+
+    def post(self, request, *args, **kwargs):
+
+        if request.user.type != "saler":
+            return JsonResponse({"Status": False, "Errors": "you not seler"}, status=403)
+        
+        state = request.data.get('state')
+        if state:
+            try:
+                Shop.objects.filter(user_id=request.user.id).update(state=strtobool(request.data['state']))
+                return JsonResponse({"status": True})
+            except ValueError as e:
+                return JsonResponse({"status": False, "Error": str(e)})
+        else:
+            return JsonResponse({"status": False, "Error": "didn't pass all arguments"})

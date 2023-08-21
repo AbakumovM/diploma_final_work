@@ -89,6 +89,8 @@ class Shop(models.Model):
     user = models.OneToOneField(
         CustomUser, verbose_name="Администратор магазина", on_delete=models.CASCADE
     )
+    state = models.BooleanField(verbose_name='статус получения заказов', default=True)
+
 
     def __str__(self):
         return self.name
