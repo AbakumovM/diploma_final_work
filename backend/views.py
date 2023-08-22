@@ -14,6 +14,7 @@ import yaml
 from backend.admin import CustemUserAdmin
 from backend.models import (
     Category,
+    Contact,
     CustomUser,
     Parameter,
     Product,
@@ -21,7 +22,13 @@ from backend.models import (
     Shop,
     ProductInfo,
 )
-from backend.serializers import CategorySerializer, ProductSerializer, ShopSerializer, UserSerializer
+from backend.serializers import (
+    CategorySerializer,
+    ContactSerializer,
+    ProductSerializer,
+    ShopSerializer,
+    UserSerializer,
+)
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -52,8 +59,6 @@ class RegisterAccount(APIView):
 
 
 class AutUser(APIView):
-
-
     def post(self, request, *args, **kwargs):
         if {"email", "password"}.issubset(request.data):
             user = authenticate(
@@ -130,10 +135,8 @@ class PartnerUpdate(APIView):
 
 
 class ShopsView(ListAPIView):
-
-   queryset = Shop.objects.all()
-   serializer_class = ShopSerializer
-
+    queryset = Shop.objects.all()
+    serializer_class = ShopSerializer
 
 
 class ProductView(ListAPIView):
@@ -144,63 +147,107 @@ class ProductView(ListAPIView):
 class UserDetails(APIView):
     permission_classes = (IsAuthenticated,)
 
-
     def get(self, request, *args, **kwargs):
-
         data = UserSerializer(request.user)
         return JsonResponse({"USER": data.data})
-    
 
     def post(self, request, *args, **kwargs):
-        
-        if {'password'}.issubset(request.data):
+        if {"password"}.issubset(request.data):
             try:
                 validate_password(request.data["password"])
             except Exception as pass_error:
-                return JsonResponse({"Status": False, "Errors": {"password": [error for error in pass_error]}}) 
+                return JsonResponse(
+                    {
+                        "Status": False,
+                        "Errors": {"password": [error for error in pass_error]},
+                    }
+                )
             else:
-                request.user.set_password(request.data['password'])
+                request.user.set_password(request.data["password"])
 
-
-        user_serializer =  UserSerializer(request.user, data=request.data, partial=True)
+        user_serializer = UserSerializer(request.user, data=request.data, partial=True)
         if user_serializer.is_valid():
             user_serializer.save()
-            return JsonResponse({'status': True, 'massege': 'success'})
+            return JsonResponse({"status": True, "massege": "success"})
         else:
-            return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
+            return JsonResponse({"Status": False, "Errors": user_serializer.errors})
 
 
 class CategoryView(ListAPIView):
-
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
 
 class PartnerState(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
-        
-        
         if request.user.type != "saler":
-            return JsonResponse({"Status": False, "Errors": "you not seler"}, status=403)
-        
+            return JsonResponse(
+                {"Status": False, "Errors": "you not seler"}, status=403
+            )
+
         state = request.user.shop
         serializer_shop = ShopSerializer(state)
 
-        return JsonResponse({"status": True, "shop": serializer_shop.data['state']})
-
+        return JsonResponse({"status": True, "shop": serializer_shop.data["state"]})
 
     def post(self, request, *args, **kwargs):
-
         if request.user.type != "saler":
-            return JsonResponse({"Status": False, "Errors": "you not seler"}, status=403)
-        
-        state = request.data.get('state')
+            return JsonResponse(
+                {"Status": False, "Errors": "you not seler"}, status=403
+            )
+
+        state = request.data.get("state")
         if state:
             try:
-                Shop.objects.filter(user_id=request.user.id).update(state=strtobool(request.data['state']))
+                Shop.objects.filter(user_id=request.user.id).update(
+                    state=strtobool(request.data["state"])
+                )
                 return JsonResponse({"status": True})
             except ValueError as e:
                 return JsonResponse({"status": False, "Error": str(e)})
         else:
             return JsonResponse({"status": False, "Error": "didn't pass all arguments"})
+
+
+class ContactView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        contacts = Contact.objects.filter(user_id=request.user.id)
+        if contacts:
+            serializer = ContactSerializer(contacts, many=True)
+            return JsonResponse({"status": True, "answer": serializer.data})
+        return JsonResponse({"status": False, "error": "not info"})
+
+    def post(self, request, *args, **kwargs):
+        if {"city", "street", "house", "phone"}.issubset(request.data):
+            request.data.update({"user": request.user.id})
+            serializer_contacts = ContactSerializer(data=request.data)
+            if serializer_contacts.is_valid():
+                serializer_contacts.save()
+                return JsonResponse({"status": True, "answer": "success"})
+            else:
+                return JsonResponse(
+                    {"Status": False, "Errors": serializer_contacts.errors}
+                )
+
+        return JsonResponse({"status": False, "error": "didn't pass all arguments"})
+
+    def put(self, request, *args, **kwargs):
+        contact_id = request.data.get("id")
+        if contact_id and contact_id.isdigit():
+            contact = Contact.objects.filter(id=contact_id, user_id=request.user.id)[0]
+            if contact:
+                serializer = ContactSerializer(contact, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return JsonResponse({"status": True})
+                else:
+                    return JsonResponse({"status": False, "errors": serializer.errors})
+            return JsonResponse({"status": False, "error": "not id in contacts"})
+        return JsonResponse({"status": False, "error": "didn't pass all arguments"})
+
+    def delete(self, request, *args, **kwargs):
+        pass

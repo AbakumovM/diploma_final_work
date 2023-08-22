@@ -89,8 +89,7 @@ class Shop(models.Model):
     user = models.OneToOneField(
         CustomUser, verbose_name="Администратор магазина", on_delete=models.CASCADE
     )
-    state = models.BooleanField(verbose_name='статус получения заказов', default=True)
-
+    state = models.BooleanField(verbose_name="статус получения заказов", default=True)
 
     def __str__(self):
         return self.name
@@ -190,50 +189,6 @@ class ProductParameter(models.Model):
         verbose_name_plural = "Список параметров"
 
 
-class Order(models.Model):
-    user = models.ForeignKey(
-        CustomUser,
-        verbose_name="Пользователь",
-        related_name="orders",
-        blank=True,
-        null=False,
-        on_delete=models.CASCADE,
-    )
-    dt = models.DateTimeField(auto_now_add=True)
-    status = models.BooleanField(default=False, verbose_name="Статус", blank=True)
-
-    class Meta:
-        verbose_name = "Заказ"
-        verbose_name_plural = "Список заказов"
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(
-        Order,
-        verbose_name="Заказ",
-        related_name="orderitems",
-        blank=True,
-        on_delete=models.CASCADE,
-    )
-    product = models.ForeignKey(
-        Product,
-        verbose_name="Продукт",
-        blank=True,
-        on_delete=models.CASCADE,
-    )
-    shop = models.ForeignKey(
-        Shop, related_name="Магазин", blank=True, on_delete=models.CASCADE
-    )
-    quantity = models.PositiveIntegerField(
-        verbose_name="Колличество",
-        blank=True,
-    )
-
-    class Meta:
-        verbose_name = "Заказ"
-        verbose_name_plural = "Список заказов"
-
-
 class Contact(models.Model):
     user = models.ForeignKey(
         CustomUser,
@@ -257,3 +212,54 @@ class Contact(models.Model):
 
     def __str__(self):
         return f"{self.city} {self.street} {self.house}"
+
+
+class Order(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        verbose_name="Пользователь",
+        related_name="orders",
+        blank=True,
+        null=False,
+        on_delete=models.CASCADE,
+    )
+    dt = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=False, verbose_name="Статус", blank=True)
+    contact = models.ForeignKey(
+        Contact,
+        verbose_name="Контакты",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Список заказов"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order,
+        verbose_name="Заказ",
+        related_name="orderitems",
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+    product = models.ForeignKey(
+        ProductInfo,
+        verbose_name="Продукт",
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+    shop = models.ForeignKey(
+        Shop, related_name="Магазин", blank=True, on_delete=models.CASCADE
+    )
+    quantity = models.PositiveIntegerField(
+        verbose_name="Колличество",
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Список заказов"
