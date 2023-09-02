@@ -4,8 +4,19 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import EmailValidator
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import BaseUserManager, AbstractUser
+from django_rest_passwordreset.tokens import get_token_generator
+
 
 USER_TYPE_CHOICES = (("buyer", "Покупатель"), ("saler", "Продавец"))
+STATE_CHOICES = (
+    ("basket", "Статус корзины"),
+    ("new", "Новый"),
+    ("confirmed", "Подтвержден"),
+    ("assembled", "Собран"),
+    ("sent", "Отправлен"),
+    ("delivered", "Доставлен"),
+    ("canceled", "Отменен"),
+)
 
 
 class CustomAccountManager(BaseUserManager):
@@ -45,7 +56,7 @@ class CustomUser(AbstractUser):
         verbose_name="Тип пользователя",
         choices=USER_TYPE_CHOICES,
         max_length=5,
-        default="buyer",
+        
     )
     is_active = models.BooleanField(default=False)
     company = models.CharField(
@@ -79,13 +90,12 @@ class CustomUser(AbstractUser):
 
 
 class Shop(models.Model):
+
     name = models.CharField(
         max_length=60, blank=False, verbose_name="Название магазина"
     )
-    url = models.URLField(max_length=200, blank=False, verbose_name="Сылка")
-    filename = models.CharField(
-        max_length=60, blank=True, verbose_name="Название файла"
-    )
+    url = models.URLField(max_length=200, blank=True, null=True)
+    
     user = models.OneToOneField(
         CustomUser, verbose_name="Администратор магазина", on_delete=models.CASCADE
     )
@@ -139,14 +149,15 @@ class Product(models.Model):
 
 
 class ProductInfo(models.Model):
-    external_id = models.PositiveIntegerField(verbose_name="Внешний ID", blank=True)
-    model = models.CharField(max_length=90, verbose_name="Модель", blank=True)
+    external_id = models.PositiveIntegerField(verbose_name="Внешний ID")
+    model = models.CharField(max_length=90, verbose_name="Модель")
     product = models.ForeignKey(
         Product, related_name="products_info", blank=True, on_delete=models.CASCADE
     )
     shop = models.ForeignKey(
         Shop, related_name="products_info", blank=True, on_delete=models.CASCADE
     )
+    description = models.TextField(blank=True)
     quantity = models.PositiveIntegerField(verbose_name="Колличество")
     price = models.PositiveIntegerField(verbose_name="Цена")
     price_rrc = models.PositiveIntegerField(verbose_name="Рекомендуемая розничная цена")
@@ -224,7 +235,9 @@ class Order(models.Model):
         on_delete=models.CASCADE,
     )
     dt = models.DateTimeField(auto_now_add=True)
-    status = models.BooleanField(default=False, verbose_name="Статус", blank=True)
+    status = models.CharField(
+        choices=STATE_CHOICES, verbose_name="Статус", blank=True
+    )
     contact = models.ForeignKey(
         Contact,
         verbose_name="Контакты",
@@ -242,13 +255,14 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         verbose_name="Заказ",
-        related_name="orderitems",
+        related_name="ordered_items",
         blank=True,
         on_delete=models.CASCADE,
     )
     product = models.ForeignKey(
         ProductInfo,
         verbose_name="Продукт",
+        related_name='ordered_items',
         blank=True,
         on_delete=models.CASCADE,
     )
@@ -263,3 +277,42 @@ class OrderItem(models.Model):
     class Meta:
         verbose_name = "Заказ"
         verbose_name_plural = "Список заказов"
+
+
+class ConfirmEmailToken(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        related_name='confirm_email_tokens',
+        on_delete=models.CASCADE,
+        verbose_name=_("The User which is associated to this password reset token")
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("When was this token generated")
+
+    )
+    key = models.CharField(
+        _("Key"),
+        max_length=64,
+        db_index=True,
+        unique=True
+    )
+
+    class Meta:
+        verbose_name = 'Токен подтверждения Email'
+        verbose_name_plural = 'Токены подтверждения Email'
+
+    @staticmethod
+    def generate_key():
+        """ generates a pseudo random code using os.urandom and binascii.hexlify """
+        return get_token_generator().generate_token()
+    
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super(ConfirmEmailToken, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return "Password reset token for user {user}".format(user=self.user)

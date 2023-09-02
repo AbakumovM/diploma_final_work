@@ -2,6 +2,7 @@ from django.urls import path
 
 from backend.views import (
     AutUser,
+    BasketView,
     ContactView,
     PartnerState,
     PartnerUpdate,
@@ -18,9 +19,9 @@ urlpatterns = [
     path("partner/state", PartnerState.as_view(), name="partner-state"),
     path("user/register", RegisterAccount.as_view(), name="user-register"),
     path("user/auth", AutUser.as_view(), name="user-auth"),
-    path("user/auth/<int:pk>", RegisterAccount.as_view(), name="user-auth"),
     path("shops", ShopsView.as_view(), name="shops"),
     path("product/all", ProductView.as_view(), name="products"),
     path("users/details", UserDetails.as_view(), name="details"),
     path("contacts", ContactView.as_view(), name="contacts"),
+    path('basket', BasketView.as_view(), name='basket'),
 ]

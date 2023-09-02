@@ -117,9 +117,14 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTH_USER_MODEL = "backend.CustomUser"
 
 
-RECIPIENTS_EMAIL = ["abakumovms@gmail.com"]
-DEFAULT_FROM_EMAIL = "abakumovms7@yandex.ru"
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_USER = 'abakumovms1@mail.ru'
+EMAIL_HOST_PASSWORD = '7667766Cvbifgh'
+EMAIL_PORT = '465'
+EMAIL_USE_SSL = True
+SERVER_EMAIL = EMAIL_HOST_USER
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
