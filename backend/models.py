@@ -22,32 +22,28 @@ STATE_CHOICES = (
 class CustomAccountManager(BaseUserManager):
     use_in_migrations = True
 
-    def _create_user(self, email, password, **extra_fields):
+    def create_user(self, email, password, **extra_fields):
+        """
+        Create and save a User with the given email and password.
+        """
         if not email:
-            raise ValueError("Поле email не может быть пустым! ")
+            raise ValueError(_("The Email must be set"))
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.save(using=self._db)
+        user.save()
         return user
 
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", False)
-        extra_fields.setdefault("is_superuser", False)
-        extra_fields.setdefault("is_active", True)
-        return self._create_user(email, password, **extra_fields)
-
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_staff") is not True:
-            raise ValueError("Администратор должен иметь is_staff=True.")
+            raise ValueError(_("Superuser must have is_staff=True."))
         if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Администратор должен иметь is_superuser=True.")
-
-        return self._create_user(email, password, **extra_fields)
+            raise ValueError(_("Superuser must have is_superuser=True."))
+        return self.create_user(email, password, **extra_fields)
 
 
 class CustomUser(AbstractUser):
@@ -56,9 +52,10 @@ class CustomUser(AbstractUser):
         verbose_name="Тип пользователя",
         choices=USER_TYPE_CHOICES,
         max_length=5,
-        
+        default="buyer",
     )
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
     company = models.CharField(
         max_length=90, verbose_name="Название компании", blank=True
     )
@@ -90,12 +87,11 @@ class CustomUser(AbstractUser):
 
 
 class Shop(models.Model):
-
     name = models.CharField(
         max_length=60, blank=False, verbose_name="Название магазина"
     )
     url = models.URLField(max_length=200, blank=True, null=True)
-    
+
     user = models.OneToOneField(
         CustomUser, verbose_name="Администратор магазина", on_delete=models.CASCADE
     )
@@ -235,9 +231,7 @@ class Order(models.Model):
         on_delete=models.CASCADE,
     )
     dt = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        choices=STATE_CHOICES, verbose_name="Статус", blank=True
-    )
+    status = models.CharField(choices=STATE_CHOICES, verbose_name="Статус", blank=True)
     contact = models.ForeignKey(
         Contact,
         verbose_name="Контакты",
@@ -262,7 +256,7 @@ class OrderItem(models.Model):
     product = models.ForeignKey(
         ProductInfo,
         verbose_name="Продукт",
-        related_name='ordered_items',
+        related_name="ordered_items",
         blank=True,
         on_delete=models.CASCADE,
     )
@@ -282,32 +276,24 @@ class OrderItem(models.Model):
 class ConfirmEmailToken(models.Model):
     user = models.ForeignKey(
         CustomUser,
-        related_name='confirm_email_tokens',
+        related_name="confirm_email_tokens",
         on_delete=models.CASCADE,
-        verbose_name=_("The User which is associated to this password reset token")
+        verbose_name=_("The User which is associated to this password reset token"),
     )
 
     created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("When was this token generated")
-
+        auto_now_add=True, verbose_name=_("When was this token generated")
     )
-    key = models.CharField(
-        _("Key"),
-        max_length=64,
-        db_index=True,
-        unique=True
-    )
+    key = models.CharField(_("Key"), max_length=64, db_index=True, unique=True)
 
     class Meta:
-        verbose_name = 'Токен подтверждения Email'
-        verbose_name_plural = 'Токены подтверждения Email'
+        verbose_name = "Токен подтверждения Email"
+        verbose_name_plural = "Токены подтверждения Email"
 
     @staticmethod
     def generate_key():
-        """ generates a pseudo random code using os.urandom and binascii.hexlify """
+        """generates a pseudo random code using os.urandom and binascii.hexlify"""
         return get_token_generator().generate_token()
-    
 
     def save(self, *args, **kwargs):
         if not self.key:
