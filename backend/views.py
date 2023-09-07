@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.contrib.auth.password_validation import validate_password
 from requests import Response, get
+from django.contrib.auth.views import LoginView
 from ujson import loads as load_json
 from django.db.models import Q, Sum, F
 from django.core.validators import URLValidator
@@ -33,6 +34,7 @@ from backend.serializers import (
     ContactSerializer,
     OrderItemSerializer,
     OrderSerializer,
+    ProductInfoSerializer,
     ProductSerializer,
     ShopSerializer,
     UserSerializer,
@@ -82,7 +84,7 @@ class RegisterAccount(APIView):
         return JsonResponse({"users": "True"})
 
 
-class AutUser(APIView):
+class AutUser(APIView, LoginView):
     def post(self, request, *args, **kwargs):
         if {"email", "password"}.issubset(request.data):
             user = authenticate(
@@ -209,8 +211,9 @@ class PartnerState(APIView):
 
         state = request.user.shop
         serializer_shop = ShopSerializer(state)
+        print(state)
 
-        return JsonResponse({"status": True, "shop": serializer_shop.data["state"]})
+        return JsonResponse({"status": True, "state": serializer_shop.data["state"]})
 
     def post(self, request, *args, **kwargs):
         if request.user.type != "saler":
@@ -224,7 +227,7 @@ class PartnerState(APIView):
                 Shop.objects.filter(user_id=request.user.id).update(
                     state=strtobool(request.data["state"])
                 )
-                return JsonResponse({"status": True})
+                return JsonResponse({"status": True, "state": state})
             except ValueError as e:
                 return JsonResponse({"status": False, "Error": str(e)})
         else:
@@ -379,7 +382,6 @@ class OrderView(APIView):
     Класс для получения и размешения заказов пользователями
     """
 
-    # получить мои заказы
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse(
@@ -407,11 +409,6 @@ class OrderView(APIView):
 
     # разместить заказ из корзины
     def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse(
-                {"Status": False, "Error": "Log in required"}, status=403
-            )
-
         if {"id", "contact"}.issubset(request.data):
             if request.data["id"].isdigit():
                 try:
@@ -425,11 +422,32 @@ class OrderView(APIView):
                     )
                 else:
                     if is_updated:
-                        new_order_signal.send(
-                            sender=self.__class__, user_id=request.user.id
-                        )
+                        # new_order_signal.send(
+                        #     sender=self.__class__, user_id=request.user.id
+                        # )
                         return JsonResponse({"Status": True})
 
         return JsonResponse(
             {"Status": False, "Errors": "Не указаны все необходимые аргументы"}
         )
+
+
+class ProductInfoView(APIView):
+    def get(self, request, *args, **kwargs):
+
+        query = Q(shop_id__state=True)
+        shop_id = request.query_params.get("shop_id")
+        category_id = request.query_params.get("category_id")
+
+        if shop_id:
+            query &= Q(shop_id=shop_id)
+        if category_id:
+            query &= Q(product__category_id=category_id)
+        queryset = (
+            ProductInfo.objects.filter(query)
+            .select_related("shop", "product__category")
+            .prefetch_related("product_param__parameter")
+        )
+
+        serializer = ProductInfoSerializer(queryset, many=True)
+        return JsonResponse({"status": True, "data": serializer.data})

@@ -183,7 +183,7 @@ class ProductParameter(models.Model):
         related_name="product_param",
         on_delete=models.CASCADE,
     )
-    parametr = models.ForeignKey(
+    parameter = models.ForeignKey(
         Parameter,
         verbose_name="Параметр",
         related_name="product_param",

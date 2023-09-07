@@ -51,10 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
-        fields = (
-            "name",
-            "id",
-        )
+        fields = ("name", "id", "state")
 
 
 class CategorySerializer(serializers.ModelSerializer):
