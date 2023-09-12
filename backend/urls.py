@@ -4,6 +4,7 @@ from backend.views import (
     AutUser,
     BasketView,
     ContactView,
+    OrderView,
     PartnerState,
     PartnerUpdate,
     ProductInfoView,
@@ -26,4 +27,5 @@ urlpatterns = [
     path("contacts", ContactView.as_view(), name="contacts"),
     path("basket", BasketView.as_view(), name="basket"),
     path("products", ProductInfoView.as_view(), name="products"),
+    path("orders", OrderView.as_view(), name="orders")
 ]

@@ -71,6 +71,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = (
             "category",
             "name",
+            "id"
         )
 
 
@@ -89,7 +90,7 @@ class ProductInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductInfo
         fields = (
-            "external_id",
+            "id",
             "model",
             "product",
             "shop",
@@ -110,11 +111,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = (
-            "id",
-            "product_info",
+            "product",
             "quantity",
             "order",
+            "shop",
         )
+        read_only_fields = ('id',)
         extra_kwargs = {"order": {"write_only": True}}
 
 
@@ -133,7 +135,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "ordered_items",
-            "state",
+            "status",
             "dt",
             "total_sum",
             "contact",
