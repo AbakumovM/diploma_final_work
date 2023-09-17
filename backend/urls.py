@@ -3,8 +3,10 @@ from django.urls import path
 from backend.views import (
     AutUser,
     BasketView,
+    ConfirmAccount,
     ContactView,
     OrderView,
+    PartnerOrders,
     PartnerState,
     PartnerUpdate,
     ProductInfoView,
@@ -27,5 +29,7 @@ urlpatterns = [
     path("contacts", ContactView.as_view(), name="contacts"),
     path("basket", BasketView.as_view(), name="basket"),
     path("products", ProductInfoView.as_view(), name="products"),
-    path("orders", OrderView.as_view(), name="orders")
+    path("order", OrderView.as_view(), name="orders"),
+    path('partner/orders', PartnerOrders.as_view(), name='partner-orders'),
+    path('user/register/confirm', ConfirmAccount.as_view(), name='user-register-confirm'),
 ]

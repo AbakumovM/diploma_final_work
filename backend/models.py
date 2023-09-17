@@ -7,7 +7,7 @@ from django.contrib.auth.models import BaseUserManager, AbstractUser
 from django_rest_passwordreset.tokens import get_token_generator
 
 
-USER_TYPE_CHOICES = (("buyer", "Покупатель"), ("saler", "Продавец"))
+USER_TYPE_CHOICES = (("buyer", "Покупатель"), ("shop", "Магазин"))
 STATE_CHOICES = (
     ("basket", "Статус корзины"),
     ("new", "Новый"),
@@ -37,7 +37,6 @@ class CustomAccountManager(BaseUserManager):
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError(_("Superuser must have is_staff=True."))
@@ -54,7 +53,7 @@ class CustomUser(AbstractUser):
         max_length=5,
         default="buyer",
     )
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
 
     company = models.CharField(
         max_length=90, verbose_name="Название компании", blank=True
@@ -253,7 +252,7 @@ class OrderItem(models.Model):
         blank=True,
         on_delete=models.CASCADE,
     )
-    product = models.ForeignKey(
+    product_info = models.ForeignKey(
         ProductInfo,
         verbose_name="Продукт",
         related_name="ordered_items",
