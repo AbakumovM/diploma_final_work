@@ -1,4 +1,3 @@
-from typing import Optional
 from django.db import models
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import EmailValidator

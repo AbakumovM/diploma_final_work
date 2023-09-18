@@ -1,13 +1,10 @@
 from distutils.util import strtobool
 from django.db import IntegrityError
 from rest_framework.generics import ListAPIView
-from urllib.parse import urlparse
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.contrib.auth.password_validation import validate_password
 from requests import Response, get
 from django.contrib.auth.views import LoginView
-from ujson import loads as load_json
 from django.db.models import Q, Sum, F
 from django.core.validators import URLValidator
 from rest_framework.views import APIView
@@ -16,7 +13,6 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.authtoken.models import Token
 import yaml
 from django.core.mail import send_mail
-from backend.admin import CustemUserAdmin
 from backend.models import (
     Category,
     Contact,
@@ -64,7 +60,7 @@ class RegisterAccount(APIView):
                     user = user_serial.save()
                     user.set_password(request.data["password"])
                     user.save()
-                    # new_user_registered.send(sender=self.__class__, user_id=user.id)
+                    new_user_registered.send(sender=self.__class__, user_id=user.id)
                     return JsonResponse({"Status": True})
                 else:
                     return JsonResponse({"Status": False, "Errors": user_serial.errors})
@@ -103,11 +99,11 @@ class ConfirmAccount(APIView):
     """
     Класс для подтверждения почтового адреса
     """
-    # Регистрация методом POST
+
     def post(self, request, *args, **kwargs):
 
-        # проверяем обязательные аргументы
-        if {'email', 'token'}.issubset(request.data):
+
+        if {"email", "token"}.issubset(request.data):
 
             token = ConfirmEmailToken.objects.filter(user__email=request.data["email"],
                                                      key=request.data["token"]).first()
@@ -321,10 +317,10 @@ class BasketView(APIView):
 
     def get(self, request, *args, **kwargs):
         basket = Order.objects.filter(
-            user_id=request.user.id, status='basket').prefetch_related(
-            'ordered_items__product_info__product__category',
-            'ordered_items__product_info__product_param__parameter').annotate(
-            total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
+            user_id=request.user.id, status="basket").prefetch_related(
+            "ordered_items__product_info__product__category",
+            "ordered_items__product_info__product_param__parameter").annotate(
+            total_sum=Sum(F("ordered_items__quantity") * F("ordered_items__product_info__price"))).distinct()
 
         serializer = OrderSerializer(basket, many=True)
         return JsonResponse({"status": True, "answer": serializer.data})
@@ -395,8 +391,8 @@ class BasketView(APIView):
 
             if objects_deleted:
                 deleted_count = OrderItem.objects.filter(query).delete()[0]
-                return JsonResponse({'Status': True, 'Удалено объектов': deleted_count})
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+                return JsonResponse({"Status": True, "Удалено объектов": deleted_count})
+        return JsonResponse({"Status": False, "Errors": "Не указаны все необходимые аргументы"})
 
 
 class OrderView(APIView):
@@ -482,10 +478,10 @@ class PartnerOrders(APIView):
             return JsonResponse({'Status': False, 'Error': 'Только для магазинов'}, status=403)
 
         order = Order.objects.filter(
-            ordered_items__product_info__shop__user_id=request.user.id).exclude(state='basket').prefetch_related(
-            'ordered_items__product_info__product__category',
-            'ordered_items__product_info__product_param__parameter').select_related('contact').annotate(
-            total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
+            ordered_items__product_info__shop__user_id=request.user.id).exclude(state="basket").prefetch_related(
+            "ordered_items__product_info__product__category",
+            "ordered_items__product_info__product_param__parameter").select_related("contact").annotate(
+            total_sum=Sum(F("ordered_items__quantity") * F("ordered_items__product_info__price"))).distinct()
 
         serializer = OrderSerializer(order, many=True)
         return Response(serializer.data)

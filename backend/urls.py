@@ -1,4 +1,5 @@
 from django.urls import path
+from django_rest_passwordreset.views import reset_password_request_token, reset_password_confirm
 
 from backend.views import (
     AutUser,
@@ -30,6 +31,8 @@ urlpatterns = [
     path("basket", BasketView.as_view(), name="basket"),
     path("products", ProductInfoView.as_view(), name="products"),
     path("order", OrderView.as_view(), name="orders"),
-    path('partner/orders', PartnerOrders.as_view(), name='partner-orders'),
-    path('user/register/confirm', ConfirmAccount.as_view(), name='user-register-confirm'),
+    path("partner/orders", PartnerOrders.as_view(), name="partner-orders"),
+    path("user/register/confirm", ConfirmAccount.as_view(), name="user-register-confirm"),
+    path('user/password_reset', reset_password_request_token, name='password-reset'),
+    path('user/password_reset/confirm', reset_password_confirm, name='password-reset-confirm'),
 ]

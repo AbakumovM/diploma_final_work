@@ -25,9 +25,9 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
 
     msg = EmailMultiAlternatives(
         # title:
-        f"Password Reset Token for {reset_password_token.user}",
+        f"Сброс пароля для {reset_password_token.user}",
         # message:
-        reset_password_token.key,
+        f"Ваш токен для сброс пароля и создания нового: {reset_password_token.key}",
         # from:
         settings.EMAIL_HOST_USER,
         # to:

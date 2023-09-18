@@ -1,0 +1,67 @@
+shop: Яндекс маркет
+categories:
+  - id: 200
+    name: Смартфоны
+  - id: 10
+    name: Аксессуары
+  - id: 4
+    name: Flash-накопители
+
+goods:
+  - id: 4216292
+    category: 200
+    model: apple/iphone/14pro
+    name: Смартфон Apple iPhone 14 pro 512GB (золотистый)
+    price: 115000
+    price_rrc: 120000
+    quantity: 10
+    parameters:
+      "Диагональ (дюйм)": 6.5
+      "Разрешение (пикс)": 2688x1242
+      "Встроенная память (Гб)": 512
+      "Цвет": золотистый
+  - id: 4216313
+    category: 200
+    model: apple/iphone/xr
+    name: Смартфон Apple iPhone XR 256GB (красный)
+    price: 64000
+    price_rrc: 70000
+    quantity: 8
+    parameters:
+      "Диагональ (дюйм)": 6.1
+      "Разрешение (пикс)": 1792x828
+      "Встроенная память (Гб)": 256
+      "Цвет": красный
+  - id: 4216226
+    category: 200
+    model: apple/iphone/xr
+    name: Смартфон Apple iPhone XR 256GB (черный)
+    price: 65000
+    price_rrc: 69990
+    quantity: 5
+    parameters:
+      "Диагональ (дюйм)": 6.1
+      "Разрешение (пикс)": 1792x828
+      "Встроенная память (Гб)": 256
+      "Цвет": черный
+  - id: 4672670
+    category: 200
+    model: apple/iphone/xr
+    name: Смартфон Apple iPhone XR 128GB (синий)
+    price: 60000
+    price_rrc: 64990
+    quantity: 7
+    parameters:
+      "Диагональ (дюйм)": 6.1
+      "Разрешение (пикс)": 1792x828
+      "Встроенная память (Гб)": 256
+      "Цвет": синий
+    id: 4634234
+    category: 10
+    model: apple/usb
+    name: Кабель для зарядки Apple iPhone
+    price: 500
+    price_rrc: 700
+    quantity: 100
+    parameters:
+      "Цвет": белый
