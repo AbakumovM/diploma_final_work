@@ -60,7 +60,7 @@ class RegisterAccount(APIView):
                     user = user_serial.save()
                     user.set_password(request.data["password"])
                     user.save()
-                    new_user_registered.send(sender=self.__class__, user_id=user.id)
+                    # new_user_registered.send(sender=self.__class__, user_id=user.id)
                     return JsonResponse({"Status": True})
                 else:
                     return JsonResponse({"Status": False, "Errors": user_serial.errors})
@@ -164,7 +164,7 @@ class PartnerUpdate(APIView):
                         parameter_object = Parameter.objects.get_or_create(name=name)
                         ProductParameter.objects.create(
                             product_info_id=prodinfo[0].id,
-                            parametr_id=parameter_object[0].id,
+                            parameter_id=parameter_object[0].id,
                             value=value,
                         )
 
