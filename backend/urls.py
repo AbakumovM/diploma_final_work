@@ -15,8 +15,10 @@ from backend.views import (
     RegisterAccount,
     ShopsView,
     UserDetails,
+    sample_view,
 )
-
+from diplom.settings import STATIC_ROOT, STATIC_URL
+from django.conf.urls.static import static
 
 app_name = "backend"
 urlpatterns = [
@@ -35,4 +37,5 @@ urlpatterns = [
     path("user/register/confirm", ConfirmAccount.as_view(), name="user-register-confirm"),
     path('user/password_reset', reset_password_request_token, name='password-reset'),
     path('user/password_reset/confirm', reset_password_confirm, name='password-reset-confirm'),
-]
+    path('api/v1/test/', sample_view)
+]+ static(STATIC_URL, document_root=STATIC_ROOT)

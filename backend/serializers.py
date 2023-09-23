@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import (
     Contact,
     CustomUser,
@@ -72,7 +73,6 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = (
             "category",
             "name",
-            "id"
         )
 
 
@@ -81,7 +81,7 @@ class ProductParameterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductParameter
-        fields = ("product_info", "parametr", "value")
+        fields = ("parameter", "value")
 
 
 class ProductInfoSerializer(serializers.ModelSerializer):
@@ -142,5 +142,19 @@ class OrderSerializer(serializers.ModelSerializer):
             "dt",
             "total_sum",
             "contact",
+        )
+        read_only_fields = ("id",)
+
+class PartSerializer(serializers.ModelSerializer):
+    ordered_items = OrderItemCreateSerializer(read_only=True, many=True)
+    total = serializers.IntegerField()
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "status",
+            "dt",
+            "total",
+            "ordered_items",
         )
         read_only_fields = ("id",)

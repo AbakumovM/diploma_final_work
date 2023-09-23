@@ -1,5 +1,6 @@
 from distutils.util import strtobool
 from django.db import IntegrityError
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView
 from django.http import JsonResponse
 from django.contrib.auth.password_validation import validate_password
@@ -31,6 +32,7 @@ from backend.serializers import (
     ContactSerializer,
     OrderItemSerializer,
     OrderSerializer,
+    PartSerializer,
     ProductInfoSerializer,
     ProductSerializer,
     ShopSerializer,
@@ -328,6 +330,7 @@ class BasketView(APIView):
 
     def post(self, request, *args, **kwargs):
         items_sting = request.data.get("items")
+        print(items_sting)
         if items_sting:
             
             basket, _ = Order.objects.get_or_create(
@@ -426,7 +429,7 @@ class OrderView(APIView):
     # разместить заказ из корзины
     def post(self, request, *args, **kwargs):
         if {"id", "contact"}.issubset(request.data):
-            if request.data["id"].isdigit():
+            if request.data["id"]:
                 try:
                     is_updated = Order.objects.filter(
                         user_id=request.user.id, id=request.data["id"]
@@ -468,6 +471,10 @@ class ProductInfoView(APIView):
         serializer = ProductInfoSerializer(queryset, many=True)
         return JsonResponse({"status": True, "data": serializer.data})
 
+@api_view(['GET'])
+def sample_view(request):
+    return Response('Получилось сделать дз!')
+
 class PartnerOrders(APIView):
     """
     Класс для получения заказов поставщиками
@@ -478,10 +485,9 @@ class PartnerOrders(APIView):
             return JsonResponse({'Status': False, 'Error': 'Только для магазинов'}, status=403)
 
         order = Order.objects.filter(
-            ordered_items__product_info__shop__user_id=request.user.id).exclude(state="basket").prefetch_related(
-            "ordered_items__product_info__product__category",
-            "ordered_items__product_info__product_param__parameter").select_related("contact").annotate(
-            total_sum=Sum(F("ordered_items__quantity") * F("ordered_items__product_info__price"))).distinct()
-
-        serializer = OrderSerializer(order, many=True)
-        return Response(serializer.data)
+            ordered_items__product_info__shop__user_id=request.user.id).exclude(status='basket').prefetch_related(
+            'ordered_items__product_info__product__category',
+            'ordered_items__product_info__product_param__parameter').annotate(
+            total=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
+        serializer = PartSerializer(order, many=True)
+        return JsonResponse({"orders": serializer.data})
