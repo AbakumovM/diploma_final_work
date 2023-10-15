@@ -258,9 +258,7 @@ class OrderItem(models.Model):
         blank=True,
         on_delete=models.CASCADE,
     )
-    shop = models.ForeignKey(
-        Shop, related_name="Магазин", blank=True, on_delete=models.CASCADE
-    )
+
     quantity = models.PositiveIntegerField(
         verbose_name="Колличество",
         blank=True,
