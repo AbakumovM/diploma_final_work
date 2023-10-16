@@ -33,3 +33,7 @@
 
 - docer-compose up -d --build  
 - docker-compose exec web-app python manage.py migrate
+
+Настройки работы почты: https://vivazzi.pro/ru/it/send-email-in-django/
+
+

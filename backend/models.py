@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.validators import EmailValidator
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import BaseUserManager, AbstractUser
 from django_rest_passwordreset.tokens import get_token_generator
@@ -52,7 +51,7 @@ class CustomUser(AbstractUser):
         max_length=5,
         default="buyer",
     )
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
 
     company = models.CharField(
         max_length=90, verbose_name="Название компании", blank=True
