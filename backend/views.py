@@ -11,6 +11,8 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 import yaml
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.throttling import AnonRateThrottle
 from backend.models import (
     Category,
     Contact,
@@ -37,7 +39,8 @@ from backend.serializers import (
 )
 from rest_framework.permissions import IsAuthenticated
 
-from backend.signals import new_user_registered, new_order
+# from backend.signals import new_user_registered, new_order
+from backend.tasks import new_user_registered_task
 
 
 class RegisterAccount(APIView):
@@ -51,36 +54,36 @@ class RegisterAccount(APIView):
         return JsonResponse({"users": serializer.data})
 
     def post(self, request, *args, **kwargs):
-        if {"first_name", "last_name", "email", "password", "company", "type"}.issubset(
+        if {"first_name", "last_name", "email", "password", "company"}.issubset(
             request.data
         ):
             try:
                 validate_password(request.data["password"])
             except Exception as er:
                 errors = [error for error in er]
-                return JsonResponse({"Status": False, "Errors": {"password": errors}})
+                return JsonResponse({"Status": False, "Errors": {"password": errors}}, status=400)
             else:
                 user_serializer = UserSerializer(data=request.data)
                 if user_serializer.is_valid():
                     user = user_serializer.save()
                     user.set_password(request.data["password"])
                     user.save()
-                    new_user_registered.send(sender=self.__class__, user_id=user.id)
-                    return JsonResponse({"Status": True})
+                    # new_user_registered_task.delay(user_id=user.id)
+                    return JsonResponse({"Status": True, "user": user_serializer.data}, status=200)
                 else:
                     return JsonResponse(
-                        {"Status": False, "Errors": user_serializer.errors}
+                        {"Status": False, "Errors": user_serializer.errors}, status=400
                     )
 
-        return JsonResponse({"Status": False, "Errors": "Указаны не все аргументы"})
+        return JsonResponse({"Status": False, "Errors": "Указаны не все аргументы"}, status=400)
 
     def delete(self, request, *args, **kwargs):
-        user = CustomUser.objects.get(id=request.data["id"])
-        if user:
-            user.delete()
-            return JsonResponse({"Status": True, "answer": "Пользователь удален"})
-        return JsonResponse(
-            {"Status": False, "Error": "Пользователь не найден. Проверьте введеный id!"}
+        try:
+            CustomUser.objects.get(id=request.data["id"]).delete()
+            return JsonResponse({"Status": True, "answer": "Пользователь удален"}, status=204)
+        except ObjectDoesNotExist:
+            return JsonResponse(
+                {"Status": False, "Error": "Пользователь не найден. Проверьте введеный id!"}
         )
 
 
