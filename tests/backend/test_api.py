@@ -3,94 +3,233 @@ from rest_framework.test import APIClient
 from model_bakery import baker
 
 from backend.models import CustomUser, Shop
+from rest_framework.authtoken.models import Token
 
 
-
-
-@pytest.fixture
-def shop_create():
-    def create(*args, **kwargs):
-        return baker.make(Shop, *args, **kwargs)
-    return create
 pytestmark = pytest.mark.django_db
 
-class TestRegisterUser:
 
+class TestRegisterUser:
     endpoint = "/api/v1/user/register"
 
-
-    def test_post_user_success(self, client):       
-        response = client.post(self.endpoint, {
-            "first_name": "1", 
-            "last_name": "2",
-            "email": "abs@mail.com",
-            "password": "7667766Cvb", 
-            "company": "ass",
-            
-        })
+    def test_post_user_success(self, client):
+        response = client.post(
+            self.endpoint,
+            {
+                "first_name": "1",
+                "last_name": "2",
+                "email": "abs@mail.com",
+                "password": "7667766Cvb",
+                "company": "ass",
+            },
+        )
         data = response.json()
-        assert data["user"]["first_name"] == "1" 
+        assert data["user"]["first_name"] == "1"
         assert data["Status"] == True
         assert response.status_code == 200
 
     def test_post_user_error_not_all_data(self, client):
-        response = client.post(self.endpoint, {
-            "first_name": "1", 
-            "last_name": "2",
-            "email": "abs@mail.com",
-            "company": "ass",
-            
-        })
+        response = client.post(
+            self.endpoint,
+            {
+                "first_name": "1",
+                "last_name": "2",
+                "email": "abs@mail.com",
+                "company": "ass",
+            },
+        )
         data = response.json()
         assert response.status_code == 400
         assert data["Status"] == False
         assert data["Errors"] == "Указаны не все аргументы"
 
     def test_post_user_error_password(self, client):
-        response = client.post(self.endpoint, {
-            "first_name": "1", 
-            "last_name": "2",
-            "email": "abs@mail.com",
-            "password": "7667", 
-            "company": "ass",
-            
-        })
+        response = client.post(
+            self.endpoint,
+            {
+                "first_name": "1",
+                "last_name": "2",
+                "email": "abs@mail.com",
+                "password": "7667",
+                "company": "ass",
+            },
+        )
         data = response.json()
         assert response.status_code == 400
         assert data["Status"] == False
-        
+
     def test_post_error_email(self, client):
-        response = client.post(self.endpoint, {
-            "first_name": "1", 
-            "last_name": "2",
-            "email": "abs@as",
-            "password": "7667766Cvb", 
-            "company": "ass",
-            
-        })
-        data = response.json() 
+        response = client.post(
+            self.endpoint,
+            {
+                "first_name": "1",
+                "last_name": "2",
+                "email": "abs@as",
+                "password": "7667766Cvb",
+                "company": "ass",
+            },
+        )
+        data = response.json()
         assert data["Status"] == False
         assert response.status_code == 400
-    
+
     def test_delete_user(self, client):
         pass
         # user = CustomUser.objects.create(first_name="1", last_name="2", email="abs@mail.com",password="7667766Cvb", company="ass",)
-        
+
         # response = client.delete(self.endpoint, {"id": })
         # assert response.status_code == 204
         # data = response.json()
         # assert data["Status"] == True
 
-class TestShop:
 
+class TestShop:
     endpoint = "/api/v1/shops"
+
+    def test_shop(self, client, shop_create):
+        shops = shop_create(name="Test_shop")
+        response = client.get(self.endpoint)
+        assert response.status_code == 200
+        data = response.json()
+        assert shops.name == data[0]["name"]
+        assert (len(data)) != 5
+        assert (len(data)) == 1
 
     def test_list_shop(self, client, shop_create):
         shops = shop_create(_quantity=5)
         response = client.get(self.endpoint)
         assert response.status_code == 200
         data = response.json()
-        assert shops[0].name == data[0]["name"]
-        assert(len(data)) == 5
-        assert(len(data)) != 1
-    
+        assert (len(data)) == len(shops)
+
+
+class TestProduct:
+    endpoint = "/api/v1/product/all"
+
+    def test_product(self, client, products_create, category_create):
+        category = category_create(_quantity=1)
+        product = products_create(category_id=category[0].id, name="iphone")
+        response = client.get(self.endpoint)
+        assert response.status_code == 200
+        data = response.json()
+        assert data[0]["name"] == product.name
+
+
+class TestUserDetails:
+    endpoint = "/api/v1/users/details"
+
+    def test_post_user_first_name(self, client, create_user):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"first_name": "test"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        print(data)
+        assert data["user"]["first_name"] == "test"
+
+    def test_post_user_password_error(self, client, create_user):
+        user = create_user(email="user1@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"password": "test"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data["Status"] == False
+
+    def test_post_user_email_error(self, client, create_user):
+        user_1 = create_user(email="aaa@mail.com", type="buyer", is_active=True)
+        user_2 = create_user(email="asd@mail.ru", type="buyer", is_active=True)
+        token = Token.objects.create(user=user_2)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"email": "aaa@mail.com"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data["Status"] == False
+
+
+class TestCategory:
+    endpoint = "/api/v1/category"
+
+    def test_get_category_list(self, client, category_create):
+        category = category_create(_quantity=5)
+        response = client.get(self.endpoint)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(category) == len(data)
+
+    def test_get_category_name(self, client, category_create):
+        category = category_create(name="Test12")
+        response = client.get(self.endpoint)
+        assert response.status_code == 200
+        data = response.json()
+        assert category.name == data[0]["name"]
+
+
+class TestPartnerState:
+    endpoint = "/api/v1/partner/state"
+
+    def test_post_state(self, client, create_user, shop_create):
+        user = create_user(email="user@example.com", type="shop", is_active=True)
+        shop = shop_create(user_id=user.id, state=True)
+        token = Token.objects.create(user=user)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"state": "False"},
+        )
+        shops = Shop.objects.get(user_id=user.id)
+        assert response.status_code == 200
+        data = response.json()
+        shop_after = Shop.objects.get(user_id=user.id)
+        assert shop_after.state != shop.state
+
+    def test_post_user_not_shop(self, create_user, client, shop_create):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        shop = shop_create(user_id=user.id, state=True)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"state": "False"},
+        )
+        assert response.status_code == 403
+        data = response.json()
+        assert data["Status"] == False
+
+    def test_get_shop(self, client, shop_create, create_user):
+        user = create_user(email="user@example.com", type="shop", is_active=True)
+        shop = shop_create(user_id=user.id, state=True)
+        token = Token.objects.create(user=user)
+        response = client.get(
+            self.endpoint, headers={"Authorization": f"Token {token.key}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        print(data)
+        assert shop.name == data["Shop_info"]["name"]
+
+
+class TestContact:
+    endpoint = "/api/v1/contacts"
+
+    def test_post_contact(self, create_user, client):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"city": "Ekb", "street": "test", "house": "1", "phone": "900"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["contact"]["city"] == "Ekb"

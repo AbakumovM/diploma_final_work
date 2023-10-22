@@ -38,6 +38,7 @@ from backend.serializers import (
     UserSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema
 
 # from backend.signals import new_user_registered, new_order
 from backend.tasks import new_user_registered_task
@@ -45,15 +46,18 @@ from backend.tasks import new_user_registered_task
 
 class RegisterAccount(APIView):
     """
-    Класс по созданию, удалению и получению всех пользователей(пукатель или продавец).
+    Класс по созданию, удалению и получению всех пользователей(покупатель или продавец).
     """
-
+    @extend_schema(summary="Получить список пользователей")
     def get(self, request, *args, **kwargs):
         users = CustomUser.objects.all()
         serializer = UserSerializer(users, many=True)
         return JsonResponse({"users": serializer.data})
-
+    
+    @extend_schema(summary="Создать пользователя")
     def post(self, request, *args, **kwargs):
+        """Метод создания пользователя. Передаются данные first_name, last_name, email, password, company."""
+
         if {"first_name", "last_name", "email", "password", "company"}.issubset(
             request.data
         ):
@@ -61,7 +65,9 @@ class RegisterAccount(APIView):
                 validate_password(request.data["password"])
             except Exception as er:
                 errors = [error for error in er]
-                return JsonResponse({"Status": False, "Errors": {"password": errors}}, status=400)
+                return JsonResponse(
+                    {"Status": False, "Errors": {"password": errors}}, status=400
+                )
             else:
                 user_serializer = UserSerializer(data=request.data)
                 if user_serializer.is_valid():
@@ -69,22 +75,32 @@ class RegisterAccount(APIView):
                     user.set_password(request.data["password"])
                     user.save()
                     # new_user_registered_task.delay(user_id=user.id)
-                    return JsonResponse({"Status": True, "user": user_serializer.data}, status=200)
+                    return JsonResponse(
+                        {"Status": True, "user": user_serializer.data}, status=200
+                    )
                 else:
                     return JsonResponse(
                         {"Status": False, "Errors": user_serializer.errors}, status=400
                     )
 
-        return JsonResponse({"Status": False, "Errors": "Указаны не все аргументы"}, status=400)
-
+        return JsonResponse(
+            {"Status": False, "Errors": "Указаны не все аргументы"}, status=400
+        )
+    @extend_schema(summary="Удалить пользователя")
     def delete(self, request, *args, **kwargs):
+
         try:
             CustomUser.objects.get(id=request.data["id"]).delete()
-            return JsonResponse({"Status": True, "answer": "Пользователь удален"}, status=204)
+            return JsonResponse(
+                {"Status": True, "answer": "Пользователь удален"}, status=204
+            )
         except ObjectDoesNotExist:
             return JsonResponse(
-                {"Status": False, "Error": "Пользователь не найден. Проверьте введеный id!"}
-        )
+                {
+                    "Status": False,
+                    "Error": "Пользователь не найден. Проверьте введеный id!",
+                }
+            )
 
 
 class AuthorizationUser(APIView, LoginView):
@@ -225,10 +241,6 @@ class UserDetails(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, *args, **kwargs):
-        serializer = UserSerializer(request.user)
-        return JsonResponse({"user": serializer.data})
-
     def post(self, request, *args, **kwargs):
         if {"password"}.issubset(request.data):
             try:
@@ -238,16 +250,25 @@ class UserDetails(APIView):
                     {
                         "Status": False,
                         "Errors": {"password": [error for error in pass_error]},
-                    }
+                    },
+                    status=400,
                 )
             else:
                 request.user.set_password(request.data["password"])
         user_serializer = UserSerializer(request.user, data=request.data, partial=True)
         if user_serializer.is_valid():
             user_serializer.save()
-            return JsonResponse({"Status": True, "Answer": "Данные успешно изменены!"})
+            return JsonResponse(
+                {
+                    "Status": True,
+                    "Answer": "Данные успешно изменены!",
+                    "user": user_serializer.data,
+                }
+            )
         else:
-            return JsonResponse({"Status": False, "Errors": user_serializer.errors})
+            return JsonResponse(
+                {"Status": False, "Errors": user_serializer.errors}, status=400
+            )
 
 
 class CategoryView(ListAPIView):
@@ -289,10 +310,11 @@ class PartnerState(APIView):
                 )
                 return JsonResponse({"Status": True, "Answer": "Данные изменены"})
             except ValueError as e:
-                return JsonResponse({"Status": False, "Error": str(e)})
+                return JsonResponse({"Status": False, "Error": str(e)}, status=400)
         else:
             return JsonResponse(
-                {"Status": False, "Error": "Указаны не все необходимые аргументы"}
+                {"Status": False, "Error": "Указаны не все необходимые аргументы"},
+                status=400,
             )
 
 
@@ -328,7 +350,7 @@ class ContactView(APIView):
             serializer_contacts = ContactSerializer(data=request.data)
             if serializer_contacts.is_valid():
                 serializer_contacts.save()
-                return JsonResponse({"Status": True, "Answer": "Данные добавлены!"})
+                return JsonResponse({"Status": True, "Answer": "Данные добавлены!", "contact": serializer_contacts.data})
             else:
                 return JsonResponse(
                     {"Status": False, "Errors": serializer_contacts.errors}

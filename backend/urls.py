@@ -46,5 +46,5 @@ urlpatterns = [
     path("basket", BasketView.as_view(), name="basket"),
     path("products", ProductInfoView.as_view(), name="products"),
     path("order", OrderView.as_view(), name="orders"),
-    path("partner/orders", PartnerOrders.as_view(), name="partner-orders"),
+    path("partner/orders", PartnerOrders.as_view(), name="partner-orders"), 
 ] + static(STATIC_URL, document_root=STATIC_ROOT)
