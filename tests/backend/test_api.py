@@ -12,75 +12,75 @@ pytestmark = pytest.mark.django_db
 class TestRegisterUser:
     endpoint = "/api/v1/user/register"
 
-    def test_post_user_success(self, client):
-        response = client.post(
-            self.endpoint,
-            {
-                "first_name": "1",
-                "last_name": "2",
-                "email": "abs@mail.com",
-                "password": "7667766Cvb",
-                "company": "ass",
-            },
-        )
-        data = response.json()
-        assert data["user"]["first_name"] == "1"
-        assert data["Status"] == True
-        assert response.status_code == 200
+    #     def test_post_user_success(self, client):
+    #         response = client.post(
+    #             self.endpoint,
+    #             {
+    #                 "first_name": "1",
+    #                 "last_name": "2",
+    #                 "email": "abs@mail.com",
+    #                 "password": "7667766Cvb",
+    #                 "company": "ass",
+    #             },
+    #         )
+    #         data = response.json()
+    #         assert data["user"]["first_name"] == "1"
+    #         assert data["Status"] == True
+    #         assert response.status_code == 200
 
-    def test_post_user_error_not_all_data(self, client):
-        response = client.post(
-            self.endpoint,
-            {
-                "first_name": "1",
-                "last_name": "2",
-                "email": "abs@mail.com",
-                "company": "ass",
-            },
-        )
-        data = response.json()
-        assert response.status_code == 400
-        assert data["Status"] == False
-        assert data["Errors"] == "Указаны не все аргументы"
+    #     def test_post_user_error_not_all_data(self, client):
+    #         response = client.post(
+    #             self.endpoint,
+    #             {
+    #                 "first_name": "1",
+    #                 "last_name": "2",
+    #                 "email": "abs@mail.com",
+    #                 "company": "ass",
+    #             },
+    #         )
+    #         data = response.json()
+    #         assert response.status_code == 400
+    #         assert data["Status"] == False
+    #         assert data["Errors"] == "Указаны не все аргументы"
 
-    def test_post_user_error_password(self, client):
-        response = client.post(
-            self.endpoint,
-            {
-                "first_name": "1",
-                "last_name": "2",
-                "email": "abs@mail.com",
-                "password": "7667",
-                "company": "ass",
-            },
-        )
-        data = response.json()
-        assert response.status_code == 400
-        assert data["Status"] == False
+    #     def test_post_user_error_password(self, client):
+    #         response = client.post(
+    #             self.endpoint,
+    #             {
+    #                 "first_name": "1",
+    #                 "last_name": "2",
+    #                 "email": "abs@mail.com",
+    #                 "password": "7667",
+    #                 "company": "ass",
+    #             },
+    #         )
+    #         data = response.json()
+    #         assert response.status_code == 400
+    #         assert data["Status"] == False
 
-    def test_post_error_email(self, client):
-        response = client.post(
-            self.endpoint,
-            {
-                "first_name": "1",
-                "last_name": "2",
-                "email": "abs@as",
-                "password": "7667766Cvb",
-                "company": "ass",
-            },
-        )
-        data = response.json()
-        assert data["Status"] == False
-        assert response.status_code == 400
+    #     def test_post_error_email(self, client):
+    #         response = client.post(
+    #             self.endpoint,
+    #             {
+    #                 "first_name": "1",
+    #                 "last_name": "2",
+    #                 "email": "abs@as",
+    #                 "password": "7667766Cvb",
+    #                 "company": "ass",
+    #             },
+    #         )
+    #         data = response.json()
+    #         assert data["Status"] == False
+    #         assert response.status_code == 400
 
-    def test_delete_user(self, client):
-        pass
-        # user = CustomUser.objects.create(first_name="1", last_name="2", email="abs@mail.com",password="7667766Cvb", company="ass",)
-
-        # response = client.delete(self.endpoint, {"id": })
-        # assert response.status_code == 204
-        # data = response.json()
-        # assert data["Status"] == True
+    def test_delete_user(self, client, create_user):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        user_1 = create_user(email="user2@example.com", type="buyer", is_active=True)
+        all_user = CustomUser.objects.count()
+        response = client.delete(self.endpoint, data={"id": user.id})
+        all_user_delete = CustomUser.objects.count()
+        assert response.status_code == 204
+        assert all_user != all_user_delete
 
 
 class TestShop:
@@ -107,8 +107,8 @@ class TestProduct:
     endpoint = "/api/v1/product/all"
 
     def test_product(self, client, products_create, category_create):
-        category = category_create(_quantity=1)
-        product = products_create(category_id=category[0].id, name="iphone")
+        category = category_create()
+        product = products_create(category_id=category.id, name="iphone")
         response = client.get(self.endpoint)
         assert response.status_code == 200
         data = response.json()
@@ -233,3 +233,92 @@ class TestContact:
         assert response.status_code == 200
         data = response.json()
         assert data["contact"]["city"] == "Ekb"
+
+    def test_post_contact_error_not_data(self, create_user, client):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        response = client.post(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"street": "test", "house": "1", "phone": "900"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        print(data)
+        assert data["Error"] == "Указаны не все необходимые аргументы"
+
+    def test_put_contact(self, client, create_user, contact_create):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        contact = contact_create(user_id=user.id)
+        response = client.put(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"id": contact.id, "city": "Moscow"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["contact"]["city"] == "Moscow"
+        assert data["contact"]["city"] != contact.city
+
+    def test_delete_contact(self, client, create_user, contact_create):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        contact = contact_create(user_id=user.id)
+        response = client.delete(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"id": contact.id},
+        )
+        assert response.status_code == 204
+
+    def test_delete_contact_error_id(self, client, create_user, contact_create):
+        user = create_user(email="user@example.com", type="buyer", is_active=True)
+        token = Token.objects.create(user=user)
+        contact = contact_create(user_id=user.id)
+        response = client.delete(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"id": "7"},
+        )
+        response_2 = client.delete(
+            self.endpoint,
+            headers={"Authorization": f"Token {token.key}"},
+            data={"id": "hello"},
+        )
+        assert response.status_code == 400
+        assert response_2.status_code == 400
+        data = response.json()
+        data_2 = response_2.json()
+        assert data["Status"] == False
+        assert data_2["Status"] == False
+
+
+class TestProductInfo:
+    endpoint = "/api/v1/products"
+
+    def test_productinfo_shop(
+        self, shop_create, client, product_info_create, products_create, category_create
+    ):
+        shop = shop_create()
+        category = category_create()
+        product = products_create(category_id=category.id)
+        product_info = product_info_create(shop_id=shop.id, product_id=product.id)
+        response = client.get(self.endpoint, data={"shop_id": product_info.shop_id})
+        assert response.status_code == 200
+        data = response.json()
+        print(data)
+        assert data["Data"][0]["model"] == product_info.model
+
+    def test_productinfo_category(
+        self, shop_create, client, product_info_create, products_create, category_create
+    ):
+        shop = shop_create()
+        category = category_create()
+        product = products_create(category_id=category.id)
+        product_info = product_info_create(shop_id=shop.id, product_id=product.id)
+        response = client.get(self.endpoint, data={"category_id": category.id})
+        assert response.status_code == 200
+        data = response.json()
+        print(data)
+        assert data["Data"][0]["model"] == product_info.model

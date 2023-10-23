@@ -51,7 +51,7 @@ class CustomUser(AbstractUser):
         max_length=5,
         default="buyer",
     )
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     company = models.CharField(
         max_length=90, verbose_name="Название компании", blank=True

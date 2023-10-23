@@ -2,9 +2,8 @@ import uuid
 import pytest
 from rest_framework.test import APIClient
 from model_bakery import baker
-from rest_framework.authtoken.models import Token
 
-from backend.models import Category, CustomUser, Product, Shop
+from backend.models import Category, Contact, Product, ProductInfo, Shop
 
 
 @pytest.fixture
@@ -32,6 +31,22 @@ def products_create():
 def category_create():
     def create(*args, **kwargs):
         return baker.make(Category, *args, **kwargs)
+
+    return create
+
+
+@pytest.fixture
+def product_info_create():
+    def create(*args, **kwargs):
+        return baker.make(ProductInfo, *args, **kwargs)
+
+    return create
+
+
+@pytest.fixture
+def contact_create():
+    def create(*args, **kwargs):
+        return baker.make(Contact, *args, **kwargs)
 
     return create
 
