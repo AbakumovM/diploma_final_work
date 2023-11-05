@@ -1,36 +1,16 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.dispatch import receiver, Signal
-from django_rest_passwordreset.signals import reset_password_token_created
+from django_rest_passwordreset.views import reset_password_request_token
 from celery import shared_task
+import PIL.Image as Image
+import io
+import requests
+import base64
+import os
+from django.core.files import File
 
-from backend.models import ConfirmEmailToken, CustomUser
-
-
-@shared_task()
-def password_reset_token_created_task(reset_password_token, **kwargs):
-    """
-    Отправляем письмо с токеном для сброса пароля
-    When a token is created, an e-mail needs to be sent to the user
-    :param sender: View Class that sent the signal
-    :param instance: View Instance that sent the signal
-    :param reset_password_token: Token Model Object
-    :param kwargs:
-    :return:
-    """
-    # send an e-mail to the user
-
-    msg = EmailMultiAlternatives(
-        # title:
-        f"Сброс пароля для {reset_password_token.user}",
-        # message:
-        f"Ваш токен для сброс пароля и создания нового: {reset_password_token.key}",
-        # from:
-        settings.EMAIL_HOST_USER,
-        # to:
-        [reset_password_token.user.email],
-    )
-    msg.send()
+from backend.models import AvatarUser, ConfirmEmailToken, CustomUser, ProductInfo
 
 
 @shared_task()
@@ -73,3 +53,34 @@ def new_order_task(user_id, **kwargs):
         [user.email],
     )
     msg.send()
+
+
+@shared_task()
+def upload_image(data):
+    user_id = data["user_id"]
+
+    byte_data = data["avatar"].encode(encoding="utf-8")
+    b = base64.b64decode(byte_data)
+    img = Image.open(io.BytesIO(b))
+    img.save(data["name"], format=img.format)
+
+    with open(data["name"], "rb") as file:
+        picture = File(file)
+
+        instance = AvatarUser(user_id=user_id, avatar=picture)
+        instance.save()
+
+    os.remove(data["name"])
+
+
+@shared_task
+def download_image(data):
+    response = requests.get(data["url"])
+    path = f"media/products_image/shop_id_{data['shop_id']}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    with open(f'{path}/{data["filename"]}', "wb") as f:
+        f.write(response.content)
+        ProductInfo.objects.filter(external_id=data["product_id"]).update(
+            image=data["filename"]
+        )

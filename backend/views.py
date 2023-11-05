@@ -1,4 +1,6 @@
+import base64
 from distutils.util import strtobool
+import os
 from django.db import IntegrityError
 from rest_framework.generics import ListAPIView
 from django.http import JsonResponse
@@ -13,6 +15,7 @@ from rest_framework.authtoken.models import Token
 import yaml
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.throttling import AnonRateThrottle
+from backend import serializers
 from backend.models import (
     Category,
     Contact,
@@ -27,6 +30,7 @@ from backend.models import (
     ConfirmEmailToken,
 )
 from backend.serializers import (
+    AvatarSerializer,
     CategorySerializer,
     ContactSerializer,
     OrderItemSerializer,
@@ -41,7 +45,12 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
 
-from backend.tasks import new_user_registered_task, new_order_task
+from backend.tasks import (
+    download_image,
+    new_user_registered_task,
+    new_order_task,
+    upload_image,
+)
 
 
 class RegisterAccount(APIView):
@@ -51,7 +60,7 @@ class RegisterAccount(APIView):
 
     @extend_schema(summary="Получить список пользователей")
     def get(self, request, *args, **kwargs):
-        users = CustomUser.objects.all()
+        users = CustomUser.objects.all().prefetch_related("avatars", "contacts")
         serializer = UserSerializer(users, many=True)
         return JsonResponse({"users": serializer.data})
 
@@ -102,6 +111,33 @@ class RegisterAccount(APIView):
                     "Error": "Пользователь не найден. Проверьте введеный id!",
                 }
             )
+
+
+class AvatarUsers(APIView):
+    serializer_class = AvatarSerializer
+
+    def get_queryset(self):
+        return AvatarUsers.objects.filter(user_id=self.kwargs["user_id"])
+
+    def post(self, request, *args, **kwargs):
+        avatar = request.FILES.get("avatar").read()
+
+        byte = base64.b64encode(avatar)
+
+        data = {
+            "user_id": request.data["user_id"],
+            "avatar": byte.decode("utf-8"),
+            "name": request.FILES.get("avatar").name,
+        }
+
+        upload_image.delay(data=data)
+
+        return JsonResponse(
+            {
+                "Status": True,
+                "Error": "загрузка",
+            }
+        )
 
 
 class AuthorizationUser(APIView, LoginView):
@@ -166,11 +202,29 @@ class PartnerUpdate(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    @extend_schema(summary="Загрузка товаров магазина")
+    @extend_schema(summary="Загрузка товаров магазина.")
     def post(self, request, *args, **kwargs):
         if request.user.type != "shop":
             return JsonResponse(
                 {"Status": False, "Error": "Только для магазинов"}, status=403
+            )
+
+        if {"image", "external_id"}.issubset(request.data):
+            url = request.data["image"]
+            shop_id = Shop.objects.get(user_id=request.user.id).id
+            product_id = request.data["external_id"]
+            filename = os.path.basename(url)
+            data = {
+                "url": url,
+                "filename": filename,
+                "product_id": product_id,
+                "shop_id": shop_id,
+            }
+            download_image.delay(data)
+            return JsonResponse(
+                {
+                    "Status": True,
+                }
             )
 
         url = request.data.get("url")
@@ -205,6 +259,14 @@ class PartnerUpdate(APIView):
                         external_id=item["id"],
                         product_id=product[0].id,
                         model=item["model"],
+                        image=upload_image.delay(
+                            {
+                                "url": item["image"],
+                                "filename": os.path.basename(item["image"]),
+                                "product_id": item["external_id"],
+                                "shop_id": shop[0].id,
+                            }
+                        ),
                         quantity=item["quantity"],
                         price=item["price"],
                         price_rrc=item["price_rrc"],

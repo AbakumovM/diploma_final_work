@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_rest_passwordreset",
     "drf_spectacular",
+    "oauth2_provider",
+    "social_django",
+    "rest_framework_social_oauth2",
     "baton.autodiscover",
 ]
 
@@ -146,15 +149,26 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = "/media/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTHENTICATION_BACKENDS = (
+    "social_core.backends.vk.VKOAuth2",
+    "rest_framework_social_oauth2.backends.DjangoOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+)
+
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+        "rest_framework_social_oauth2.authentication.SocialAuthentication",
     ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
@@ -165,6 +179,27 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
+# SOCIAL_AUTH_VK_OAUTH2_KEY = "51777970"
+# SOCIAL_AUTH_VK_OAUTH2_SECRET = "nLRcJImxSk7OjqwX5vBG"
+# SOCIAL_AUTH_VK_OAUTH2_SCOPE = ['email']
+# SOCIAL_AUTH_PIPELINE = (
+#     'social_core.pipeline.social_auth.social_details',
+#     'social_core.pipeline.social_auth.social_uid',
+#     'social_core.pipeline.social_auth.social_user',
+#     'social_core.pipeline.user.get_username',
+#     "backend.pipeline.save_to_email",
+#     'social_core.pipeline.user.create_user',
+#     'social_core.pipeline.social_auth.associate_user',
+#     'social_core.pipeline.social_auth.load_extra_data',
+#     'social_core.pipeline.user.user_details',
+# )
+
+GITHUB_AUTH_KEY = "d4318c9c8cc2c57c8efb"
+GITHUB_AUTH_SECRET = "aef887db9e5e5e055fccf2a2fc334ab90dedbb17"
+GITHUB_AUTH_USE_JWT = False  # False if you're using token based authentication
+
+GITHUB_AUTH_CALLBACK_URL = "http://localhost:8000/auth/success/"  # url of the frontend handling redirects from github
+GITHUB_AUTH_ALLOWED_REDIRECT_URIS = [GITHUB_AUTH_CALLBACK_URL]
 
 # Celery settings
 CELERY_BROKER_URL = "redis://localhost:6379"

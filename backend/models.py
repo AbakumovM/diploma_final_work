@@ -20,7 +20,7 @@ STATE_CHOICES = (
 class CustomAccountManager(BaseUserManager):
     use_in_migrations = True
 
-    def create_user(self, email, password, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         """
         Create and save a User with the given email and password.
         """
@@ -81,6 +81,13 @@ class CustomUser(AbstractUser):
         verbose_name = "Пользователь"
         verbose_name_plural = "Список пользователей"
         ordering = ("email",)
+
+
+class AvatarUser(models.Model):
+    avatar = models.ImageField(upload_to="avatar_user/", default="avatar_user/1.png")
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="avatars"
+    )
 
 
 class Shop(models.Model):
@@ -151,6 +158,9 @@ class ProductInfo(models.Model):
         Shop, related_name="products_info", blank=True, on_delete=models.CASCADE
     )
     description = models.TextField(blank=True)
+    image = models.ImageField(
+        upload_to="products_image/", default="products_image/default.png"
+    )
     quantity = models.PositiveIntegerField(verbose_name="Колличество")
     price = models.PositiveIntegerField(verbose_name="Цена")
     price_rrc = models.PositiveIntegerField(verbose_name="Рекомендуемая розничная цена")

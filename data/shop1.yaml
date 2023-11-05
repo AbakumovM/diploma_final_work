@@ -12,6 +12,7 @@ goods:
     category: 224
     model: apple/iphone/xs-max
     name: Смартфон Apple iPhone XS Max 512GB (золотистый)
+    image: https://com-lf.ru/wp-content/uploads/123-1.jpg
     price: 110000
     price_rrc: 116990
     quantity: 14
@@ -24,6 +25,7 @@ goods:
     category: 224
     model: apple/iphone/xr
     name: Смартфон Apple iPhone XR 256GB (красный)
+    image: http://rubinzone.ru/wp-content/uploads/2019/02/xr-red.jpg
     price: 65000
     price_rrc: 69990
     quantity: 9
@@ -36,6 +38,7 @@ goods:
     category: 224
     model: apple/iphone/xr
     name: Смартфон Apple iPhone XR 256GB (черный)
+    image: https://s.catch.com.au/images/product/0024/24586/5d6d7808b7de0770642324.jpg
     price: 65000
     price_rrc: 69990
     quantity: 5
@@ -48,6 +51,7 @@ goods:
     category: 224
     model: apple/iphone/xr
     name: Смартфон Apple iPhone XR 128GB (синий)
+    image: https://micro-line.ru/images/detailed/188/e3519656b138f17aedd6e2c258f1d4dc.jpg
     price: 60000
     price_rrc: 64990
     quantity: 7

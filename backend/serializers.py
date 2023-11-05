@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import (
+    AvatarUser,
     Contact,
     CustomUser,
     Order,
@@ -32,8 +33,15 @@ class ContactSerializer(serializers.ModelSerializer):
         extra_kwargs = {"user": {"write_only": True}}
 
 
+class AvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AvatarUser
+        fields = "avatar"
+
+
 class UserSerializer(serializers.ModelSerializer):
     contacts = ContactSerializer(read_only=True, many=True)
+    avatars = AvatarSerializer(read_only=True, many=True)
 
     class Meta:
         model = CustomUser
@@ -46,6 +54,7 @@ class UserSerializer(serializers.ModelSerializer):
             "position",
             "type",
             "contacts",
+            "avatars",
         )
         read_only_fields = ("id",)
 
@@ -93,6 +102,7 @@ class ProductInfoSerializer(serializers.ModelSerializer):
             "product",
             "shop",
             "quantity",
+            "image",
             "price",
             "price_rrc",
             "product_parameters",

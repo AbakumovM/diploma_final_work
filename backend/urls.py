@@ -6,6 +6,7 @@ from django_rest_passwordreset.views import (
 
 from backend.views import (
     AuthorizationUser,
+    AvatarUsers,
     BasketView,
     ConfirmAccount,
     ContactView,
@@ -20,7 +21,7 @@ from backend.views import (
     UserDetails,
     CategoryView,
 )
-from diplom.settings import STATIC_ROOT, STATIC_URL
+from diplom.settings import MEDIA_ROOT, MEDIA_URL, STATIC_ROOT, STATIC_URL
 from django.conf.urls.static import static
 
 app_name = "backend"
@@ -47,4 +48,5 @@ urlpatterns = [
     path("products", ProductInfoView.as_view(), name="products"),
     path("order", OrderView.as_view(), name="orders"),
     path("partner/orders", PartnerOrders.as_view(), name="partner-orders"),
-] + static(STATIC_URL, document_root=STATIC_ROOT)
+    path("avatar", AvatarUsers.as_view(), name="avatar"),
+]
