@@ -1,7 +1,5 @@
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
-from django.dispatch import receiver, Signal
-from django_rest_passwordreset.views import reset_password_request_token
 from celery import shared_task
 import PIL.Image as Image
 import io
@@ -57,8 +55,9 @@ def new_order_task(user_id, **kwargs):
 
 @shared_task()
 def upload_image(data):
-    user_id = data["user_id"]
+    """Загрузка фото в карточку пользователя"""
 
+    user_id = data["user_id"]
     byte_data = data["avatar"].encode(encoding="utf-8")
     b = base64.b64decode(byte_data)
     img = Image.open(io.BytesIO(b))
@@ -75,11 +74,14 @@ def upload_image(data):
 
 @shared_task
 def download_image(data):
+    """Загрузка фото продукта по ссылке"""
+
     response = requests.get(data["url"])
     path = f"media/products_image/shop_id_{data['shop_id']}"
     if not os.path.exists(path):
         os.makedirs(path)
-    with open(f'{path}/{data["filename"]}', "wb") as f:
+    f_name = f'{path}/{data["filename"]}'
+    with open(f_name, "wb") as f:
         f.write(response.content)
         ProductInfo.objects.filter(external_id=data["product_id"]).update(
             image=data["filename"]

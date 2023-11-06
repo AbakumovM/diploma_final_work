@@ -51,9 +51,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_rest_passwordreset",
     "drf_spectacular",
-    "oauth2_provider",
-    "social_django",
-    "rest_framework_social_oauth2",
     "baton.autodiscover",
 ]
 
@@ -158,7 +155,6 @@ MEDIA_URL = "/media/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = (
-    "social_core.backends.vk.VKOAuth2",
     "rest_framework_social_oauth2.backends.DjangoOAuth2",
     "django.contrib.auth.backends.ModelBackend",
 )
@@ -167,8 +163,6 @@ AUTHENTICATION_BACKENDS = (
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
-        "rest_framework_social_oauth2.authentication.SocialAuthentication",
     ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
@@ -194,12 +188,12 @@ REST_FRAMEWORK = {
 #     'social_core.pipeline.user.user_details',
 # )
 
-GITHUB_AUTH_KEY = "d4318c9c8cc2c57c8efb"
-GITHUB_AUTH_SECRET = "aef887db9e5e5e055fccf2a2fc334ab90dedbb17"
-GITHUB_AUTH_USE_JWT = False  # False if you're using token based authentication
+# GITHUB_AUTH_KEY = "d4318c9c8cc2c57c8efb"
+# GITHUB_AUTH_SECRET = "aef887db9e5e5e055fccf2a2fc334ab90dedbb17"
+# GITHUB_AUTH_USE_JWT = False  # False if you're using token based authentication
 
-GITHUB_AUTH_CALLBACK_URL = "http://localhost:8000/auth/success/"  # url of the frontend handling redirects from github
-GITHUB_AUTH_ALLOWED_REDIRECT_URIS = [GITHUB_AUTH_CALLBACK_URL]
+# GITHUB_AUTH_CALLBACK_URL = "http://localhost:8000/auth/success/"  # url of the frontend handling redirects from github
+# GITHUB_AUTH_ALLOWED_REDIRECT_URIS = [GITHUB_AUTH_CALLBACK_URL]
 
 # Celery settings
 CELERY_BROKER_URL = "redis://localhost:6379"

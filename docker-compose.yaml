@@ -36,3 +36,16 @@ services:
         limits:
           cpus: '0.5'
           memory: 1G
+  redis:
+    image: redis:latest
+    ports:
+      - 6378:6378
+
+  celery:
+    build: .
+    command: python -m celery -A diplom worker -l info 
+    volumes:
+      - .:/app
+    depends_on:
+      - web-app
+      - redis

@@ -21,8 +21,7 @@ from backend.views import (
     UserDetails,
     CategoryView,
 )
-from diplom.settings import MEDIA_ROOT, MEDIA_URL, STATIC_ROOT, STATIC_URL
-from django.conf.urls.static import static
+
 
 app_name = "backend"
 urlpatterns = [

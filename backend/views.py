@@ -14,8 +14,6 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 import yaml
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.throttling import AnonRateThrottle
-from backend import serializers
 from backend.models import (
     Category,
     Contact,
@@ -198,6 +196,7 @@ class ConfirmAccount(APIView):
 class PartnerUpdate(APIView):
     """
     Класс загрузки товаров от магазина. Магазин передает ссылку на файл с данными.
+    Загрузку фото делаем через post и передаем image и external_id.
     """
 
     permission_classes = (IsAuthenticated,)
@@ -255,18 +254,11 @@ class PartnerUpdate(APIView):
                     product = Product.objects.get_or_create(
                         name=item["name"], id=item["id"], category_id=item["category"]
                     )
+
                     prodinfo = ProductInfo.objects.get_or_create(
                         external_id=item["id"],
                         product_id=product[0].id,
                         model=item["model"],
-                        image=upload_image.delay(
-                            {
-                                "url": item["image"],
-                                "filename": os.path.basename(item["image"]),
-                                "product_id": item["external_id"],
-                                "shop_id": shop[0].id,
-                            }
-                        ),
                         quantity=item["quantity"],
                         price=item["price"],
                         price_rrc=item["price_rrc"],
